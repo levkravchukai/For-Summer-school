@@ -1,0 +1,117 @@
+---
+title: "Homework 8"
+author: "Lev Kravchuck"
+date: "02 04 2021"
+output: html_document
+---
+
+in---
+title: "K Nearest Neighbors"
+author: "lev"
+date: "3/3/2021"
+output: 
+  html_document: 
+    toc: yes
+    toc_float: yes
+    highlight: tango
+    theme: flatly
+---
+
+```{r setup, include=FALSE, warning=F, message=F}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(DataExplorer)
+```
+
+
+
+```{r}
+cancer <- read_csv("Data/data.csv", col_types = "nfnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn")
+cancer
+```
+```{r}
+plot_missing(cancer, ggtheme = theme_bw())
+```
+Почистимо дані
+
+```{r}
+select(cancer, -X33, -id, -ends_with("_se"), -ends_with("_worst")) -> cancer
+```
+
+
+Проведемо нормалізацію
+
+```{r}
+library(caret)
+
+pre_data <- preProcess(cancer, method = "range")
+normalized_cancer <- predict(pre_data, cancer)
+normalized_cancer %>% 
+  summary()
+```
+Розділення даних на навчання і перевірку
+
+```{r}
+set.seed(1234)
+
+indicies <- createDataPartition(normalized_cancer$diagnosis, p = 0.75, list = F)
+
+cancer_train <- normalized_cancer[indicies, ]
+cancer_test  <- normalized_cancer[-indicies, ]
+
+
+```
+
+
+КНН
+
+```{r}
+set.seed(1234)
+
+fit_control <- trainControl(method = "none")
+knn_fit1 <- train(form = diagnosis~., 
+                 data = cancer_train, 
+                 method = "knn", 
+                 trControl = fit_control)
+
+knn_fit1
+```
+
+
+```{r}
+(prediction <- predict(knn_fit1, newdata = cancer_test))
+
+mean(prediction == cancer_test$diagnosis)
+
+confusionMatrix(prediction, reference = cancer_test$diagnosis, positive = "M")
+```
+
+```{r}
+set.seed(1234)
+
+fit_control <- trainControl(method = "repeatedcv", repeats = 3, number = 10)
+
+knn_fit2 <- train(form = diagnosis~.,
+                  data = cancer_train,
+                  method = "knn", 
+                  trControl=fit_control, tuneLength = 20)
+
+knn_fit2
+```
+
+
+```{r}
+plot(knn_fit2)
+```
+
+```{r}
+prediction2 <- predict(knn_fit2, newdata = cancer_test)
+
+mean(prediction2 == cancer_test$diagnosis)
+
+confusionMatrix(prediction2, reference = cancer_test$diagnosis, positive = "M")
+```
+Інтерпретація даних
+
+Статистичний аналіз був проведений у програмному середовищі R (версія 4.0.4, r-project.org). Машинне навчання здійснювалося за допомогою методу k-NN. При k = 9 Accuracy становило 0.9366, що є найкращим результатом з усіх k. Кількість хибних діагнозів М становило 6, а діагнозів В - 3 рази. При 95%-довірчому інтервалі точність складає  0.8831, 0.9706.P-Value  <2e-16, що вказує на статистично значущість результату. Чутливість методу становить 0.9434, а специфічність - 0.9326.

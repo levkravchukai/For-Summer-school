@@ -1,0 +1,38 @@
+---
+title: "homework 6"
+author: "Lev"
+date: "08 03 2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+library(readxl)
+library(ggcorrplot)
+library(dplyr)
+library(tidyr)
+library(purrr)
+
+table_base <- read_excel("homework.xlsx")
+table_base %>% select(is.numeric, -1) -> table_new
+
+#Нормальність розподілу даних 
+shap_table <- tbl_df(sapply(lapply(table_new, shapiro.test), '[', c("p.value")))
+
+
+table_new %>% cor(method = "spearman", use="na.or.complete") -> cor_data
+
+p_data <- cor_pmat(cor_data, use="na.or.complete") #статистична значущість кореляційних коефіцієнтів
+
+
+#Рис.1
+
+ggcorrplot(cor_data, type = "lower", lab = T, hc.order = T, p.mat = p_data, insig = "blank")
+```
+Рис.1
+
+
+Інтерпретация результатів.
+
+Статистичний аналіз був проведений у програмному середовищі R (версія 4.0.3, r-project.org). Розподіл даних згідно нормального закону розподілу був перевірений за допомгою тесту Шапіро-Уілка. Для оцінки зв'язку між величинами використовувася коефіціент кореляції Спірмена. Статистично значущими результатами вважали при p < 0.05. Кореляційна матриця із коеф. кореляції та стат. знач. зображена на рис. 1. 

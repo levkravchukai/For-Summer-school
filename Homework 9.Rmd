@@ -1,0 +1,44 @@
+---
+title: "Homework 9"
+author: "Lev Kravchuck"
+date: "02 04 2021"
+output: html_document
+---
+```{r}
+library(tidyverse)
+```
+
+```{r warning=F}
+health_df <- read_csv("Data/health.csv")
+
+health_df
+```
+
+
+```{r}
+library(corrplot)
+
+health_df %>%  
+  cor() %>%  
+  corrplot(type = "upper", order = "hclust", tl.col = "black") # we don't need bottom diagonal, so we specify "upper" only
+```
+```{r warning=F, message=F}
+library("PerformanceAnalytics")
+
+health_df %>% 
+  chart.Correlation(histogram=TRUE, pch=19)
+```
+
+Метод найменших квадратів
+```{r}
+health__mod1 <- lm(systolic~weight+bmi+age, data = health_df) #лишив лише ті параметри, у яких p-value< 0.05
+
+summary(health__mod1)
+
+```
+
+```{r warning=F, message=T, results="asis"}
+library(equatiomatic)
+
+extract_eq(health__mod1, use_coefs = TRUE)
+```
